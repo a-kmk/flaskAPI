@@ -6,18 +6,15 @@ from db import stores,items
 #in most APIs you store the data in a DB
 app = Flask(__name__)
 
-#in JSON everything has to be inside lists or numbers, the advantage with JSON is that it it's a string of text.
-#main reason for using db instead of a python list is that lists dont persist
-
 
 # the endpoint is the /store, the function
 # associated with that endpoint is get_stores
-@app.get("/store") #http:127.0.0.1:5000/store
+@app.get("/store") #http:127.0.0.1:5000/store #
 def get_stores():
     return {"stores" :list(stores.values())}
 
-@app.get("/store/<string:store_id>")
-def get_store(name):
+@app.get("/store/<string:store_id>") #
+def get_store(store_id):
     try:
         return stores[store_id]
     except KeyError:
@@ -30,9 +27,14 @@ def get_item_in_store(item_id):
     except KeyError:
         abort(404, message="Item not found")
     
-@app.post("/store")
+@app.post("/store") #
 def create_store():
     store_data=request.get_json()
+    if "name" not in store_data:
+        abort(
+            400,
+            message="Bad request. Ensure 'name' is included in the JSON payload",
+        )
     store_id = uuid.uuid4().hex
     #dictrionary of 2 keys, name and items, name is taken from json
     store={**store_data, "id": store_id}
@@ -42,11 +44,31 @@ def create_store():
 
 #endpoint the client requests is dynamic and in the URL
 @app.post("/item")
-def create_item(name):
+def create_item():
     item_data = request.get_json()
+    if (
+      "price" not in item_data
+      or "store_id" not in item_data
+      or "name" not in item_data  
+    ):
+        abort(
+            400,
+            message="Bad request. Ensure 'price', 'store_id', and 'name' are included in the JSON payload.",
+        )
     if item_data["store_id"] not in stores:
          abort(404, message="Store not found")
     
+    #check if item already exists
+    for item in items.values():
+        if (
+            item_data["name"] == item["name"]
+            and item_data["store_id"] == item["store_id"]
+        ):
+            abort(400, message=("Item already exists"))
+    
+    if item_data["stores_id"] not in stores:
+        abort(404, message = "Store not found")
+        
     item_id = uuid.uuid4().hex
     item = {**item_data, "id": item_id}
     items[item_id] =  item
@@ -57,8 +79,6 @@ def create_item(name):
 def get_all_items():
     return {"items" :list(items.values())}
 
-#what happens if two stores have the same name
-#using query string parameters and headers are also other ways
 
 
 
