@@ -4,6 +4,7 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 
 from db import items
+from schemas import ItemSchema, ItemUpdateSchma
 
 blp = Blueprint("Items", "items", description="Operations on items")
 
@@ -23,14 +24,9 @@ class Item(MethodView):
         except KeyError:
             abort(404, message="Item not found.")
 
-    def put(self, item_id):
+    @blp.arguments(ItemUpdateSchma)
+    def put(self, item_data, item_id):
         item_data = request.get_json()
-        # more validation
-        if "price" not in item_data or "name" not in item_data:
-            abort(
-                400,
-                message="Bad request. Ensure 'price', and 'name' are included in the JSON payload.",
-            )
         try:
             item = items[item_id]
             item |= item_data
@@ -45,18 +41,10 @@ class ItemList(MethodView):
     def get(self):
         return {"items": list(items.values())}
 
-    def post(self):
-        item_data = request.get_json()
-        #Needs more validation
-        if (
-            "price" not in item_data
-            or "store_id" not in item_data
-            or "name" not in item_data
-        ):
-            abort(
-                400,
-                message="Bad request. Ensure 'price', 'store_id', and 'name' are included in the JSON payload.",
-            )
+    @blp.arguments(ItemSchema)
+    def post(self, item_data):
+  
+        #marshmellow only checks incoming data, can't check that item already exists
         for item in items.values():
             if (
                 item_data["name"] == item["name"]
