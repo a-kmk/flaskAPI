@@ -2,7 +2,6 @@ import uuid
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import stores
 from schemas import StoreSchema
 #Blueprint is used to divide an API into multiple segments
 blp = Blueprint("stores", __name__, description="Operations on stores")
@@ -39,5 +38,5 @@ class StoreList(MethodView):
         #dictionary of 2 keys, name and items, name is taken from json
         store={**store_data, "id": store_id}
         stores[store_id] = store
-        return store
+        return store 
 
